@@ -1,0 +1,11 @@
+=== RESTAURANT INFORMATION ===
+ID: 2
+Name: la bonne fourchette
+Address: 78 rue de verdun
+
+=== MENU ===
+Menu: []
+
+=== EMPLOYEES ===
+
+=== ORDERS ===

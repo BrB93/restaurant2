@@ -1,0 +1,14 @@
+=== RESTAURANT INFORMATION ===
+ID: 1
+Name: taverne
+Address: 45 rue du four
+
+=== MENU ===
+Menu: [bolo - pate avec sauce bolognaise : 16,00€ (Plat, 457 kcal, 16 min)]
+
+=== EMPLOYEES ===
+
+=== ORDERS ===
+Commande #1 (23/02/2025 21:32) - En cours
+  - bolo - pate avec sauce bolognaise : 16,00€ (Plat, 457 kcal, 16 min)
+Total : 16,00€

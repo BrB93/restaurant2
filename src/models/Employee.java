@@ -1,6 +1,6 @@
 package models;
 
-class Employee {
+public class Employee {
     private int id;
     private String firstName;
     private String lastName;
