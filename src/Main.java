@@ -17,8 +17,15 @@ public class Main {
         loadExistingRestaurants();
         while (true) {
             showMainMenu();
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+            String input = scanner.nextLine();
+            int choice;
+            
+            try {
+                choice = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Veuillez entrer un numéro valide !");
+                continue;
+            }
 
             switch (choice) {
                 case 1:
@@ -32,6 +39,9 @@ public class Main {
                     createNewRestaurant();
                     break;
                 case 3:
+                    deleteRestaurant();
+                    break;
+                case 4:
                     System.out.println("Au revoir !");
                     scanner.close();
                     return;
@@ -73,7 +83,8 @@ public class Main {
         System.out.println("\n=== Gestion des Restaurants ===");
         System.out.println("1. Sélectionner un restaurant existant");
         System.out.println("2. Créer un nouveau restaurant");
-        System.out.println("3. Quitter");
+        System.out.println("3. Supprimer un restaurant"); // Nouvelle option
+        System.out.println("4. Quitter"); // Décalé à 4
         System.out.print("Votre choix : ");
     }
 
@@ -109,10 +120,71 @@ public class Main {
         System.out.print("Adresse : ");
         String address = scanner.nextLine();
         
-        Restaurant newRestaurant = new Restaurant(restaurants.size() + 1, name, address);
+        int postalCode = 0;
+        while (postalCode == 0) {
+            System.out.print("Code postal : ");
+            try {
+                postalCode = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Veuillez entrer un code postal valide (nombre entier)");
+            }
+        }
+        
+        System.out.print("Ville : ");
+        String city = scanner.nextLine();
+        
+        Restaurant newRestaurant = new Restaurant(restaurants.size() + 1, name, address, postalCode, city);
         restaurants.add(newRestaurant);
         FileHandler.saveRestaurant(newRestaurant);
         System.out.println("Restaurant ajouté et sauvegardé !");
+    }
+
+    private static void deleteRestaurant() {
+        if (restaurants.isEmpty()) {
+            System.out.println("Aucun restaurant à supprimer !");
+            return;
+        }
+
+        System.out.println("\n=== Restaurants disponibles ===");
+        for (int i = 0; i < restaurants.size(); i++) {
+            System.out.println((i + 1) + ". " + restaurants.get(i).toString());
+        }
+
+        System.out.print("Sélectionnez le numéro du restaurant à supprimer (0 pour annuler) : ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            
+            if (choice == 0) {
+                System.out.println("Suppression annulée.");
+                return;
+            }
+            
+            if (choice > 0 && choice <= restaurants.size()) {
+                Restaurant restaurantToDelete = restaurants.get(choice - 1);
+                
+                System.out.print("Êtes-vous sûr de vouloir supprimer " + 
+                               restaurantToDelete.getName() + " ? (oui/non) : ");
+                String confirm = scanner.nextLine();
+                
+                if (confirm.equalsIgnoreCase("oui")) {
+                    // Supprimer le fichier de données
+                    File fileToDelete = new File(DATA_DIR + "restaurant_" + 
+                                               restaurantToDelete.getId() + ".txt");
+                    if (fileToDelete.delete()) {
+                        restaurants.remove(choice - 1);
+                        System.out.println("Restaurant supprimé avec succès !");
+                    } else {
+                        System.out.println("Erreur lors de la suppression du fichier !");
+                    }
+                } else {
+                    System.out.println("Suppression annulée.");
+                }
+            } else {
+                System.out.println("Numéro de restaurant invalide !");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un numéro valide.");
+        }
     }
 
     private static void manageRestaurant(Restaurant restaurant) {

@@ -1,10 +1,11 @@
 === RESTAURANT INFORMATION ===
 ID: 2
-Name: la bonne fourchette
-Address: 78 rue de verdun
+Name: Bistrot
+Address: 422 rue Marcel Belot
+PostalCode: 45160
+City: Olivet
 
 === MENU ===
-Menu: []
 
 === EMPLOYEES ===
 

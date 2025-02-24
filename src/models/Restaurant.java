@@ -9,19 +9,22 @@ public class Restaurant {
     private int id;
     private String name;
     private String address;
+    private int postalCode;    // Nouveau champ
+    private String city;       // Nouveau champ
     private Menu menu;
     private List<Order> orders;
     private List<Employee> employees;
     private int nextOrderNumber = 1;
 
-    public Restaurant(int id, String name, String address) {
+    public Restaurant(int id, String name, String address, int postalCode, String city) {
         this.id = id;
         this.name = name;
         this.address = address;
+        this.postalCode = postalCode;
+        this.city = city;
         this.menu = new Menu();
         this.orders = new ArrayList<>();
         this.employees = new ArrayList<>();
-        // Initialiser nextOrderNumber à la plus grande valeur existante + 1
         this.nextOrderNumber = 1;
     }
 
@@ -48,7 +51,8 @@ public class Restaurant {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Restaurant #%d : %s, Adresse : %s\n", id, name, address));
+        sb.append(String.format("Restaurant #%d : %s, Adresse : %s, %d %s\n", 
+            id, name, address, postalCode, city));
         
         // Regrouper les employés par rôle
         Map<String, List<String>> employeesByRole = employees.stream()
@@ -95,5 +99,14 @@ public class Restaurant {
 
     public Menu getMenu() {
         return menu;
+    }
+
+    // Nouveaux getters
+    public int getPostalCode() {
+        return postalCode;
+    }
+
+    public String getCity() {
+        return city;
     }
 }

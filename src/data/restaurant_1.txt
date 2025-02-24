@@ -2,9 +2,10 @@
 ID: 1
 Name: taverne
 Address: 45 rue du four
+PostalCode: 75006
+City: Paris
 
 === MENU ===
-Bolo - Pates sauce bolognaise - Plat, 451 kcal, 16 min : 16,00€ (Plat, 451 kcal, 16 min)
 Carbo - pate sauce creme : 17,00€ (Plat, 458 kcal, 15 min)
 
 === EMPLOYEES ===

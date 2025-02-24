@@ -28,6 +28,8 @@ public class FileHandler {
             writer.println("ID: " + restaurant.getId());
             writer.println("Name: " + restaurant.getName());
             writer.println("Address: " + restaurant.getAddress());
+            writer.println("PostalCode: " + restaurant.getPostalCode());
+            writer.println("City: " + restaurant.getCity());
             writer.println();
 
             // Section Menu - Correction du format de sauvegarde
@@ -106,6 +108,8 @@ public class FileHandler {
             String section = "";
             String name = "";
             String address = "";
+            int postalCode = 0;
+            String city = "";
             Order currentOrder = null;
             StringBuilder orderBuilder = new StringBuilder();
 
@@ -124,10 +128,12 @@ public class FileHandler {
                 switch (section) {
                     case "=== RESTAURANT INFORMATION ===":
                         if (line.startsWith("Name: ")) name = line.substring(6);
-                        if (line.startsWith("Address: ")) {
-                            address = line.substring(9);
+                        if (line.startsWith("Address: ")) address = line.substring(9);
+                        if (line.startsWith("PostalCode: ")) postalCode = Integer.parseInt(line.substring(12));
+                        if (line.startsWith("City: ")) {
+                            city = line.substring(6);
                             if (restaurant == null) {
-                                restaurant = new Restaurant(id, name, address);
+                                restaurant = new Restaurant(id, name, address, postalCode, city);
                             }
                         }
                         break;
