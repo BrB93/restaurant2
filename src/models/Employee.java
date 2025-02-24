@@ -20,4 +20,30 @@ public class Employee {
     public String toString() {
         return "Employee #" + id + ": " + firstName + " " + lastName + ", Role: " + role + ", Salary: " + salary + ", Hire Date: " + hireDate;
     }
+
+    // Ajout des getters nécessaires
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    // Compléter les getters manquants
+    public String getHireDate() {
+        return hireDate;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public int getId() {
+        return id;
+    }
 }

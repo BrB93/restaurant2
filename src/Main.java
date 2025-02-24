@@ -1,10 +1,12 @@
 import java.io.File;
-import java.nio.file.Files;
+import java.time.format.DateTimeFormatter;  // Ajout de l'import manquant
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
-import models.*;  // Import all models
-import utils.FileHandler;
+import java.util.stream.Collectors;
+import models.*;
+import utils.FileHandler;  // Import all models
 
 public class Main {
     private static List<Restaurant> restaurants = new ArrayList<>();
@@ -40,6 +42,8 @@ public class Main {
     }
 
     private static void loadExistingRestaurants() {
+        restaurants.clear(); // S'assurer que la liste est vide avant de charger
+        
         File dataDir = new File(DATA_DIR);
         if (!dataDir.exists()) {
             dataDir.mkdirs();
@@ -50,96 +54,18 @@ public class Main {
         if (files != null) {
             for (File file : files) {
                 try {
-                    // Extraire l'ID du nom du fichier (restaurant_X.txt)
                     int id = Integer.parseInt(file.getName().split("_")[1].split("\\.")[0]);
-                    List<String> lines = Files.readAllLines(file.toPath());
-                    
-                    // Lire les informations de base du restaurant
-                    String name = "";
-                    String address = "";
-                    for (String line : lines) {
-                        if (line.startsWith("Name: ")) {
-                            name = line.substring(6);
-                        } else if (line.startsWith("Address: ")) {
-                            address = line.substring(9);
-                        }
-                    }
-                    
-                    if (!name.isEmpty() && !address.isEmpty()) {
-                        Restaurant restaurant = new Restaurant(id, name, address);
-                        
-                        // Charger le menu
-                        boolean inMenuSection = false;
-                        boolean inEmployeesSection = false;
-                        
-                        for (String line : lines) {
-                            if (line.equals("=== MENU ===")) {
-                                inMenuSection = true;
-                                continue;
-                            } else if (line.equals("=== EMPLOYEES ===")) {
-                                inMenuSection = false;
-                                inEmployeesSection = true;
-                                continue;
-                            } else if (line.equals("=== ORDERS ===")) {
-                                inEmployeesSection = false;
-                                continue;
-                            }
-
-                            if (inMenuSection && line.startsWith("Menu: [")) {
-                                String menuContent = line.substring(7, line.length() - 1);
-                                if (!menuContent.isEmpty()) {
-                                    String[] dishes = menuContent.split("], \\[");
-                                    for (String dishStr : dishes) {
-                                        // Enlever les crochets restants
-                                        dishStr = dishStr.replace("[", "").replace("]", "");
-                                        
-                                        // Format attendu: "nom - description : prix€ (catégorie, calories kcal, temps min)"
-                                        String[] mainParts = dishStr.split(" - ");
-                                        String dishName = mainParts[0];  // Changé name en dishName
-                                        
-                                        String[] descParts = mainParts[1].split(" : ");
-                                        String description = descParts[0];
-                                        
-                                        // Parser le prix et les détails entre parenthèses
-                                        String[] priceParts = descParts[1].split(" \\(");
-                                        double price = Double.parseDouble(priceParts[0].replace("€", "").replace(",", "."));
-                                        
-                                        // Parser les détails entre parenthèses
-                                        String details = priceParts[1].replace(")", "");
-                                        String[] detailParts = details.split(", ");
-                                        
-                                        String category = detailParts[0];
-                                        int calories = Integer.parseInt(detailParts[1].replace(" kcal", ""));
-                                        int prepTime = Integer.parseInt(detailParts[2].replace(" min", ""));
-                                        
-                                        // Créer le plat avec les informations récupérées
-                                        Dish dish = new Dish(dishName, description, price, calories,  // Utilisation de dishName
-                                                           category, "Normale", true,
-                                                           new ArrayList<>(), "Non spécifié",
-                                                           prepTime, 0.0, "");
-                                        
-                                        restaurant.getMenu().addDish(dish);
-                                    }
-                                }
-                            }
-                            
-                            if (inEmployeesSection && !line.isEmpty() && !line.equals("=== EMPLOYEES ===")) {
-                                // Parser les employés
-                                // TODO: Implémenter le chargement des employés
-                            }
-                        }
-                        
+                    Restaurant restaurant = FileHandler.loadRestaurant(id);
+                    if (restaurant != null) {
                         restaurants.add(restaurant);
-                        System.out.println("Restaurant chargé : " + restaurant.getName());
+                        System.out.println("Restaurant chargé avec " + 
+                                         restaurant.getEmployees().size() + " employés et " +
+                                         restaurant.getOrders().size() + " commandes.");
                     }
                 } catch (Exception e) {
                     System.out.println("Erreur lors du chargement d'un restaurant : " + e.getMessage());
                 }
             }
-        }
-        
-        if (!restaurants.isEmpty()) {
-            System.out.println("\n" + restaurants.size() + " restaurant(s) chargé(s).");
         }
     }
 
@@ -190,59 +116,89 @@ public class Main {
     }
 
     private static void manageRestaurant(Restaurant restaurant) {
+        // Recharger le restaurant avant de le gérer
+        Restaurant updatedRestaurant = FileHandler.loadRestaurant(restaurant.getId());
+        if (updatedRestaurant != null) {
+            // Mettre à jour la référence dans la liste des restaurants
+            int index = restaurants.indexOf(restaurant);
+            if (index != -1) {
+                restaurants.set(index, updatedRestaurant);
+            }
+            restaurant = updatedRestaurant;
+        }
+
         boolean running = true;
         while (running) {
             System.out.println("\n=== Menu principal ===");
-            System.out.println("1. Ajouter un plat au menu");
-            System.out.println("2. Supprimer un plat du menu");
-            System.out.println("3. Afficher le menu");
-            System.out.println("4. Rechercher un plat");
-            System.out.println("5. Ajouter un plat à la commande");
-            System.out.println("6. Afficher la commande");
-            System.out.println("7. Ajouter un employé");
-            System.out.println("8. Quitter");
-            System.out.println("9. Retour à la liste des restaurants");
+            System.out.println("1. Afficher les détails du restaurant"); // Nouvelle option
+            System.out.println("2. Ajouter un plat au menu");
+            System.out.println("3. Supprimer un plat du menu");
+            System.out.println("4. Afficher le menu");
+            System.out.println("5. Rechercher un plat");
+            System.out.println("6. Ajouter un plat à la commande");
+            System.out.println("7. Afficher la commande");
+            System.out.println("8. Gérer les employés"); // Option modifiée
+            System.out.println("9. Finaliser la commande");
+            System.out.println("10. Historique des commandes");
+            System.out.println("11. Quitter");
+            System.out.println("12. Retour à la liste des restaurants");
             System.out.print("Votre choix : ");
 
             try {
                 int choice = Integer.parseInt(scanner.nextLine());
                 switch (choice) {
                     case 1:
-                        addDishToMenu(restaurant);
+                        displayRestaurantDetails(restaurant);
                         break;
                     case 2:
-                        removeDishFromMenu(restaurant);
+                        addDishToMenu(restaurant);
                         break;
                     case 3:
-                        displayMenu(restaurant);
+                        removeDishFromMenu(restaurant);
                         break;
                     case 4:
-                        searchDish(restaurant);
+                        displayMenu(restaurant);
                         break;
                     case 5:
-                        addDishToOrder(restaurant);
+                        searchDish(restaurant);
                         break;
                     case 6:
-                        displayOrder(restaurant);
+                        addDishToOrder(restaurant);
                         break;
                     case 7:
-                        addEmployee(restaurant);
+                        displayOrder(restaurant);
                         break;
                     case 8:
+                        manageEmployees(restaurant);
+                        FileHandler.saveRestaurant(restaurant); // Sauvegarder après modification
+                        break;
+                    case 9:
+                        finalizeOrder(restaurant);
+                        break;
+                    case 10:
+                        displayOrderHistory(restaurant);
+                        break;
+                    case 11:
                         System.out.println("Au revoir !");
                         System.exit(0);
                         break;
-                    case 9:
+                    case 12:
                         running = false;
                         break;
                     default:
                         System.out.println("Option invalide !");
                 }
+                // Sauvegarder après chaque action
+                FileHandler.saveRestaurant(restaurant);
             } catch (NumberFormatException e) {
                 System.out.println("Veuillez entrer un numéro valide");
             }
-            FileHandler.saveRestaurant(restaurant);
         }
+    }
+
+    private static void displayRestaurantDetails(Restaurant restaurant) {
+        System.out.println("\n=== Détails du restaurant ===");
+        System.out.println(restaurant.toString());
     }
 
     private static void addDishToMenu(Restaurant restaurant) {
@@ -497,7 +453,8 @@ public class Main {
             salary
         );
         restaurant.addEmployee(newEmployee);
-        System.out.println("Employé ajouté !");
+        FileHandler.saveRestaurant(restaurant); // Ajout de la sauvegarde immédiate
+        System.out.println("Employé ajouté et sauvegardé !");
     }
 
     private static void manageMenu(Restaurant restaurant) {
@@ -507,14 +464,142 @@ public class Main {
     }
 
     private static void manageEmployees(Restaurant restaurant) {
-        System.out.println("\n=== Gestion des employés ===");
-        // TODO: Implémenter la gestion des employés
-        System.out.println("Fonctionnalité à venir...");
+        boolean managing = true;
+        while (managing) {
+            System.out.println("\n=== Gestion des employés ===");
+            System.out.println("1. Afficher la liste des employés");
+            System.out.println("2. Ajouter un employé");
+            System.out.println("3. Retour au menu principal");
+            System.out.print("Votre choix : ");
+
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                switch (choice) {
+                    case 1:
+                        displayEmployees(restaurant);
+                        break;
+                    case 2:
+                        addEmployee(restaurant);
+                        break;
+                    case 3:
+                        managing = false;
+                        break;
+                    default:
+                        System.out.println("Option invalide !");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Veuillez entrer un numéro valide");
+            }
+        }
+    }
+
+    private static void displayEmployees(Restaurant restaurant) {
+        if (restaurant.getEmployees().isEmpty()) {
+            System.out.println("Aucun employé dans ce restaurant !");
+            return;
+        }
+
+        System.out.println("\n=== Liste des employés ===");
+        // Utiliser le format groupé par rôle
+        Map<String, List<Employee>> employeesByRole = restaurant.getEmployees().stream()
+            .collect(Collectors.groupingBy(Employee::getRole));
+
+        employeesByRole.forEach((role, employees) -> {
+            System.out.println("\n" + role + " :");
+            employees.forEach(emp -> 
+                System.out.printf("- %s %s (Depuis le %s, Salaire: %.2f€)\n",
+                    emp.getFirstName(),
+                    emp.getLastName(),
+                    emp.getHireDate(),
+                    emp.getSalary())
+            );
+        });
     }
 
     private static void manageOrders(Restaurant restaurant) {
         System.out.println("\n=== Gestion des commandes ===");
         // TODO: Implémenter la gestion des commandes
         System.out.println("Fonctionnalité à venir...");
+    }
+
+    private static void finalizeOrder(Restaurant restaurant) {
+        List<Order> activeOrders = restaurant.getOrders().stream()
+            .filter(o -> "En cours".equals(o.getStatus()))
+            .toList();
+
+        if (activeOrders.isEmpty()) {
+            System.out.println("Aucune commande en cours !");
+            return;
+        }
+
+        System.out.println("\n=== Commandes en cours ===");
+        for (int i = 0; i < activeOrders.size(); i++) {
+            System.out.println((i + 1) + ". " + activeOrders.get(i));
+        }
+
+        try {
+            System.out.print("Sélectionnez la commande à finaliser (1-" + activeOrders.size() + ") : ");
+            int choice = Integer.parseInt(scanner.nextLine()) - 1;
+
+            if (choice >= 0 && choice < activeOrders.size()) {
+                Order orderToFinalize = activeOrders.get(choice);
+                System.out.println("\nRécapitulatif de la commande :");
+                System.out.println(orderToFinalize);
+                
+                System.out.print("\nMode de paiement (CB/Espèces/Chèque) : ");
+                String paymentMethod = scanner.nextLine();
+                
+                System.out.print("Confirmer le paiement de " + 
+                    String.format("%.2f", orderToFinalize.getTotal()) + 
+                    "€ par " + paymentMethod + " ? (oui/non) : ");
+                
+                String confirm = scanner.nextLine();
+                if (confirm.equalsIgnoreCase("oui")) {
+                    orderToFinalize.setStatus("Terminée");
+                    System.out.println("Commande finalisée avec succès !");
+                    System.out.println("Bon appétit !");
+                } else {
+                    System.out.println("Paiement annulé.");
+                }
+            } else {
+                System.out.println("Numéro de commande invalide !");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un numéro valide.");
+        }
+    }
+
+    private static void displayOrderHistory(Restaurant restaurant) {
+        List<Order> completedOrders = restaurant.getOrders().stream()
+            .filter(o -> "Terminée".equals(o.getStatus()))
+            .toList();
+
+        if (completedOrders.isEmpty()) {
+            System.out.println("Aucune commande finalisée !");
+            return;
+        }
+
+        double totalRevenue = 0;
+        System.out.println("\n=== Historique des commandes ===");
+        for (Order order : completedOrders) {
+            // Format modifié pour inclure les plats
+            System.out.printf("\nOrder #%d (%s) - Total: %.2f€ - Status: %s\n",
+                order.getOrderNumber(),
+                order.getOrderTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                order.getTotal(),
+                order.getStatus());
+                
+            // Afficher les plats de la commande
+            for (Dish dish : order.getDishes()) {
+                System.out.println("  - " + dish.getName() + " - " + dish.getDescription() +
+                                 " : " + String.format("%.2f", dish.getCurrentPrice()) + "€");
+            }
+            totalRevenue += order.getTotal();
+        }
+        
+        System.out.println("\nRécapitulatif :");
+        System.out.println("Nombre de commandes finalisées : " + completedOrders.size());
+        System.out.printf("Chiffre d'affaires total : %.2f€\n", totalRevenue);
+        System.out.printf("Moyenne par commande : %.2f€\n", totalRevenue / completedOrders.size());
     }
 }

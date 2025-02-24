@@ -1,0 +1,10 @@
+=== RESTAURANT INFORMATION ===
+ID: 3
+Name: Ogrillo
+Address: 15 rue de chardet
+
+=== MENU ===
+
+=== EMPLOYEES ===
+
+=== ORDERS ===

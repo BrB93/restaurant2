@@ -41,16 +41,24 @@ public class Order {
         this.status = status;
     }
 
+    // Ajout des getters manquants
+    public int getOrderNumber() {
+        return orderNumber;
+    }
+
+    public LocalDateTime getOrderTime() {
+        return orderTime;
+    }
+
     @Override
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Commande #%d (%s) - %s\n", 
-                  orderNumber, orderTime.format(formatter), status));
+        sb.append(String.format("Order #%d (%s) - Total: %.2f€ - Status: %s", 
+                  orderNumber, orderTime.format(formatter), total, status));
         for (Dish dish : dishes) {
-            sb.append("  - ").append(dish.toString()).append("\n");
+            sb.append("\n  - ").append(dish.toString());
         }
-        sb.append(String.format("Total : %.2f€", total));
         return sb.toString();
     }
 }
