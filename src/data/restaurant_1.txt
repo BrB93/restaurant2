@@ -1,9 +1,9 @@
 === RESTAURANT INFORMATION ===
 ID: 1
-Name: taverne
-Address: 45 rue du four
-PostalCode: 75006
-City: Paris
+Name: Taverne
+Address: 45 rue de Verdun
+PostalCode: 45160
+City: Olivet
 
 === MENU ===
 Carbo - pate sauce creme : 17,00€ (Plat, 458 kcal, 15 min)
@@ -36,4 +36,13 @@ Total: 33,00€
 
 Order #4 (25/02/2025 08:50) - Status: Terminée
 Total: 7,50€
+
+Order #5 (25/02/2025 10:29) - Status: Terminée
+Total: 0,00€
+
+Order #6 (25/02/2025 10:32) - Status: Terminée
+Total: 17,00€
+
+Order #7 (25/02/2025 10:32) - Status: Terminée
+Total: 83,50€
 

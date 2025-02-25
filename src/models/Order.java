@@ -11,6 +11,7 @@ public class Order {
     private double total;
     private LocalDateTime orderTime;
     private String status;  // "En cours", "Préparation", "Terminée"
+    private static Order lastCreated;
 
     public Order(int orderNumber) {
         this.orderNumber = orderNumber;
@@ -18,11 +19,13 @@ public class Order {
         this.total = 0;
         this.orderTime = LocalDateTime.now();
         this.status = "En cours";
+        lastCreated = this;
     }
 
     public void addDish(Dish dish) {
         dishes.add(dish);
-        total += dish.getCurrentPrice();
+        // Mettre à jour le total automatiquement
+        this.total += dish.getCurrentPrice();
     }
 
     public List<Dish> getDishes() {
@@ -33,6 +36,12 @@ public class Order {
         return total;
     }
 
+    public void setTotal(double total) {
+        this.total = total;
+        // Ne pas recalculer le total à partir des plats
+        // car nous chargeons une commande existante
+    }
+
     public String getStatus() {
         return status;
     }
@@ -41,13 +50,27 @@ public class Order {
         this.status = status;
     }
 
-    // Ajout des getters manquants
     public int getOrderNumber() {
         return orderNumber;
     }
 
     public LocalDateTime getOrderTime() {
         return orderTime;
+    }
+
+    public void setOrderTime(LocalDateTime orderTime) {
+        this.orderTime = orderTime;
+    }
+
+    public static Order getLastCreated() {
+        return lastCreated;
+    }
+
+    // Nouvelle méthode pour recalculer le total
+    public void recalculateTotal() {
+        this.total = dishes.stream()
+            .mapToDouble(Dish::getCurrentPrice)
+            .sum();
     }
 
     @Override

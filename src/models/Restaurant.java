@@ -11,15 +11,16 @@ public class Restaurant {
     private int id;
     private String name;            // Renommé de nomRestaurant pour cohérence
     private String address;         // Renommé de adresse pour cohérence
-    private int postalCode;
+    private String postalCode;      // Changé en String pour gérer les codes postaux avec des zéros devant
     private String city;
     private Menu menu;
     private List<Order> orders;     // Renommé de commandes pour cohérence
     private List<Employee> employees; // Renommé de employes pour cohérence
     private int nextOrderNumber;
+    private static Restaurant lastCreated;
 
     // Constructeur existant
-    public Restaurant(int id, String name, String address, int postalCode, String city) {
+    public Restaurant(int id, String name, String address, String postalCode, String city) {
         this.id = id;
         this.name = name;
         this.address = address;
@@ -29,6 +30,7 @@ public class Restaurant {
         this.orders = new ArrayList<>();
         this.employees = new ArrayList<>();
         this.nextOrderNumber = 1;
+        lastCreated = this;
     }
 
     // Méthodes existantes
@@ -55,25 +57,20 @@ public class Restaurant {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Restaurant #%d : %s, Adresse : %s, %d %s\n", 
-            id, name, address, postalCode, city));
-        
-        // Regrouper les employés par rôle
-        Map<String, List<String>> employeesByRole = employees.stream()
-            .collect(Collectors.groupingBy(
-                Employee::getRole,
-                Collectors.mapping(
-                    e -> e.getFirstName() + " " + e.getLastName(),
-                    Collectors.toList()
-                )
-            ));
+        sb.append("=== RESTAURANT INFORMATION ===\n");
+        sb.append(String.format("ID: %d\n", id));
+        sb.append(String.format("Name: %s\n", name));
+        sb.append(String.format("Address: %s\n", address));
+        sb.append(String.format("PostalCode: %s\n", postalCode));
+        sb.append(String.format("City: %s\n", city));
         
         if (!employees.isEmpty()) {
-            sb.append("Employés : \n");
-            employeesByRole.forEach((role, names) -> {
-                sb.append("- ").append(role).append(" : ");
-                sb.append(String.join(", ", names));
-                sb.append("\n");
+            sb.append("Employés :\n");
+            Map<String, List<Employee>> employeesByRole = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getRole));
+            employeesByRole.forEach((role, emps) -> {
+                emps.forEach(emp -> sb.append(String.format("- %s : %s %s\n", 
+                    role, emp.getFirstName(), emp.getLastName())));
             });
         }
         
@@ -106,7 +103,7 @@ public class Restaurant {
     }
 
     // Nouveaux getters
-    public int getPostalCode() {
+    public String getPostalCode() {
         return postalCode;
     }
 
@@ -168,7 +165,7 @@ public class Restaurant {
 
     public void afficherRestaurant() {
         System.out.println("=== Détails du restaurant ===");
-        System.out.printf("ID: %d\nNom: %s\nAdresse: %s, %d %s\n",
+        System.out.printf("ID: %d\nNom: %s\nAdresse: %s, %s %s\n",
             id, name, address, postalCode, city);
         System.out.printf("Nombre d'employés: %d\n", employees.size());
         System.out.printf("Nombre de commandes: %d\n", orders.size());
@@ -199,5 +196,26 @@ public class Restaurant {
 
     public void chargerCommandes(String fichier) {
         utils.FileHandler.loadOrders(this);
+    }
+
+    public static Restaurant getLastCreated() {
+        return lastCreated;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    // Ajouter setter pour name
+    public void setName(String name) {
+        this.name = name;
     }
 }

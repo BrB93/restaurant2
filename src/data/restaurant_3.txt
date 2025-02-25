@@ -1,0 +1,14 @@
+=== RESTAURANT INFORMATION ===
+ID: 3
+Name: La Parenthese
+Address: 14 Place Chatelet
+PostalCode: 45000
+City: Orleans
+
+=== MENU ===
+Bolo - Pate sauce tomate : 14,00€ (Plat, 325 kcal, 16 min)
+
+=== EMPLOYEES ===
+Employee #1: Maxime Sob, Role: Plongeur, Salary: 1450,00, Hire Date: 2024-05-06
+
+=== ORDERS ===

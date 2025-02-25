@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import models.*;
-import utils.FileHandler;  // Import all models
+import utils.RestaurantFileHandler;  // Remplacer l'ancien import FileHandler
 
 public class Main {
     private static List<Restaurant> restaurants = new ArrayList<>();
@@ -55,8 +55,7 @@ public class Main {
     }
 
     private static void loadExistingRestaurants() {
-        restaurants.clear(); // S'assurer que la liste est vide avant de charger
-        
+        restaurants.clear();
         File dataDir = new File(DATA_DIR);
         if (!dataDir.exists()) {
             dataDir.mkdirs();
@@ -67,18 +66,22 @@ public class Main {
         if (files != null) {
             for (File file : files) {
                 try {
-                    int id = Integer.parseInt(file.getName().split("_")[1].split("\\.")[0]);
-                    Restaurant restaurant = FileHandler.loadRestaurant(id);
+                    int id = Integer.parseInt(file.getName().replace("restaurant_", "").replace(".txt", ""));
+                    Restaurant restaurant = RestaurantFileHandler.loadRestaurant(id);
                     if (restaurant != null) {
                         restaurants.add(restaurant);
-                        System.out.println("Restaurant chargé avec " + 
-                                         restaurant.getEmployees().size() + " employés et " +
-                                         restaurant.getOrders().size() + " commandes.");
+                        System.out.println("Restaurant chargé : " + restaurant.getName());
                     }
                 } catch (Exception e) {
-                    System.out.println("Erreur lors du chargement d'un restaurant : " + e.getMessage());
+                    System.err.println("Erreur lors du chargement du restaurant : " + e.getMessage());
                 }
             }
+        }
+
+        if (restaurants.isEmpty()) {
+            System.err.println("Attention : Aucun restaurant n'a pu être chargé !");
+        } else {
+            System.out.println("Nombre de restaurants chargés : " + restaurants.size());
         }
     }
 
@@ -123,13 +126,15 @@ public class Main {
         System.out.print("Adresse : ");
         String address = scanner.nextLine();
         
-        int postalCode = 0;
-        while (postalCode == 0) {
+        String postalCode = "";
+        boolean validPostalCode = false;
+        while (!validPostalCode) {
             System.out.print("Code postal : ");
-            try {
-                postalCode = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Veuillez entrer un code postal valide (nombre entier)");
+            postalCode = scanner.nextLine();
+            if (postalCode.matches("\\d{5}")) {  // Vérifie que c'est un nombre à 5 chiffres
+                validPostalCode = true;
+            } else {
+                System.out.println("Veuillez entrer un code postal valide (5 chiffres)");
             }
         }
         
@@ -138,7 +143,7 @@ public class Main {
         
         Restaurant newRestaurant = new Restaurant(restaurants.size() + 1, name, address, postalCode, city);
         restaurants.add(newRestaurant);
-        FileHandler.saveRestaurant(newRestaurant);
+        RestaurantFileHandler.saveRestaurant(newRestaurant);
         System.out.println("Restaurant ajouté et sauvegardé !");
     }
 
@@ -192,7 +197,7 @@ public class Main {
 
     private static void manageRestaurant(Restaurant restaurant) {
         // Recharger le restaurant avant de le gérer
-        Restaurant updatedRestaurant = FileHandler.loadRestaurant(restaurant.getId());
+        Restaurant updatedRestaurant = RestaurantFileHandler.loadRestaurant(restaurant.getId());  // Modifié ici
         if (updatedRestaurant != null) {
             // Mettre à jour la référence dans la liste des restaurants
             int index = restaurants.indexOf(restaurant);
@@ -245,7 +250,7 @@ public class Main {
                         break;
                     case 8:
                         manageEmployees(restaurant);
-                        FileHandler.saveRestaurant(restaurant); // Sauvegarder après modification
+                        RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
                         break;
                     case 9:
                         finalizeOrder(restaurant);
@@ -264,7 +269,7 @@ public class Main {
                         System.out.println("Option invalide !");
                 }
                 // Sauvegarder après chaque action
-                FileHandler.saveRestaurant(restaurant);
+                RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
             } catch (NumberFormatException e) {
                 System.out.println("Veuillez entrer un numéro valide");
             }
@@ -272,8 +277,11 @@ public class Main {
     }
 
     private static void displayRestaurantDetails(Restaurant restaurant) {
-        System.out.println("\n=== Détails du restaurant ===");
-        System.out.println(restaurant.toString());
+        if (restaurant != null) {
+            System.out.println(restaurant.toString());
+        } else {
+            System.out.println("Erreur : Restaurant non trouvé");
+        }
     }
 
     private static void addDishToMenu(Restaurant restaurant) {
@@ -528,7 +536,7 @@ public class Main {
             salary
         );
         restaurant.addEmployee(newEmployee);
-        FileHandler.saveRestaurant(restaurant); // Ajout de la sauvegarde immédiate
+        RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
         System.out.println("Employé ajouté et sauvegardé !");
     }
 
