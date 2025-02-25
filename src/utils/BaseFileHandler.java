@@ -31,10 +31,10 @@ public class BaseFileHandler {
         return data;
     }
 
-    protected static void createDataDirectory() {
-        File dir = new File(DATA_DIR);
-        if (!dir.exists()) {
-            dir.mkdirs();
+    protected static void createDataDirectory(String directory) {
+        File dataDir = new File(directory);
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
         }
     }
 }

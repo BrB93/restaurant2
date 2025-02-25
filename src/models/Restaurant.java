@@ -7,19 +7,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Restaurant {
-    // Attributs existants
     private int id;
-    private String name;            // Renommé de nomRestaurant pour cohérence
-    private String address;         // Renommé de adresse pour cohérence
-    private String postalCode;      // Changé en String pour gérer les codes postaux avec des zéros devant
+    private String name;
+    private String address;
+    private String postalCode;
     private String city;
     private Menu menu;
-    private List<Order> orders;     // Renommé de commandes pour cohérence
-    private List<Employee> employees; // Renommé de employes pour cohérence
+    private List<Order> orders;
+    private List<Employee> employees;
     private int nextOrderNumber;
     private static Restaurant lastCreated;
 
-    // Constructeur existant
     public Restaurant(int id, String name, String address, String postalCode, String city) {
         this.id = id;
         this.name = name;
@@ -33,18 +31,22 @@ public class Restaurant {
         lastCreated = this;
     }
 
-    // Méthodes existantes
+    public void setMenu(Menu menu) {
+        this.menu = menu;
+    }
+
     public void addEmployee(Employee employee) {
         employees.add(employee);
     }
 
     public Order createNewOrder() {
-        Order order = new Order(nextOrderNumber++);
-        orders.add(order);
-        return order;
+        int newOrderNumber = orders.isEmpty() ? 1 :
+            orders.stream().mapToInt(Order::getOrderNumber).max().getAsInt() + 1;
+        Order newOrder = new Order(newOrderNumber);
+        orders.add(newOrder);
+        return newOrder;
     }
 
-    // Nouvelle méthode pour mettre à jour le nextOrderNumber
     public void updateNextOrderNumber() {
         if (!orders.isEmpty()) {
             nextOrderNumber = orders.stream()
@@ -56,28 +58,9 @@ public class Restaurant {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== RESTAURANT INFORMATION ===\n");
-        sb.append(String.format("ID: %d\n", id));
-        sb.append(String.format("Name: %s\n", name));
-        sb.append(String.format("Address: %s\n", address));
-        sb.append(String.format("PostalCode: %s\n", postalCode));
-        sb.append(String.format("City: %s\n", city));
-        
-        if (!employees.isEmpty()) {
-            sb.append("Employés :\n");
-            Map<String, List<Employee>> employeesByRole = employees.stream()
-                .collect(Collectors.groupingBy(Employee::getRole));
-            employeesByRole.forEach((role, emps) -> {
-                emps.forEach(emp -> sb.append(String.format("- %s : %s %s\n", 
-                    role, emp.getFirstName(), emp.getLastName())));
-            });
-        }
-        
-        return sb.toString();
+        return name + " (" + address + ", " + postalCode + " " + city + ")";
     }
 
-    // Add getters
     public int getId() {
         return id;
     }
@@ -102,7 +85,6 @@ public class Restaurant {
         return menu;
     }
 
-    // Nouveaux getters
     public String getPostalCode() {
         return postalCode;
     }
@@ -111,7 +93,6 @@ public class Restaurant {
         return city;
     }
 
-    // Nouvelles méthodes requises
     public void ajouterCommande(Order commande) {
         orders.add(commande);
     }
@@ -172,7 +153,6 @@ public class Restaurant {
         System.out.printf("Chiffre d'affaires total: %.2f\u20AC\n", totalChiffreAffaire());
         System.out.printf("Total des dépenses en salaires: %.2f\u20AC\n", totalSalaireEmployes());
         
-        // Afficher le détail des salaires par rôle
         Map<String, List<Employee>> parRole = employees.stream()
             .collect(Collectors.groupingBy(Employee::getRole));
         
@@ -188,8 +168,6 @@ public class Restaurant {
         }
     }
 
-    // Les méthodes de sauvegarde et chargement sont déjà gérées par FileHandler
-    // Mais on peut ajouter des méthodes déléguées pour respecter la spécification
     public void sauvegarderCommandes(String fichier) {
         utils.FileHandler.saveOrders(this);
     }
@@ -214,7 +192,6 @@ public class Restaurant {
         this.city = city;
     }
 
-    // Ajouter setter pour name
     public void setName(String name) {
         this.name = name;
     }

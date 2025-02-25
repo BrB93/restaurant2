@@ -1,23 +1,18 @@
-import java.io.File;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;  // Ajout de l'import manquant
-import java.util.Map;
-import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.util.*;
+import managers.*;
 import models.*;
-import utils.RestaurantFileHandler;  // Remplacer l'ancien import FileHandler
+import utils.RestaurantFileHandler;
 
 public class Main {
     private static List<Restaurant> restaurants = new ArrayList<>();
     private static Scanner scanner = new Scanner(System.in);
-    private static final String DATA_DIR = "src/data/";
+    private static boolean running = false; // Add this class field
 
     public static void main(String[] args) {
         System.setProperty("file.encoding", "UTF-8");
         Locale.setDefault(Locale.FRANCE);
-        loadExistingRestaurants();
+        RestaurantManager.loadExistingRestaurants(restaurants);
+        
         while (true) {
             showMainMenu();
             String input = scanner.nextLine();
@@ -39,10 +34,10 @@ public class Main {
                     selectRestaurant();
                     break;
                 case 2:
-                    createNewRestaurant();
+                    RestaurantManager.createNewRestaurant(restaurants);
                     break;
                 case 3:
-                    deleteRestaurant();
+                    RestaurantManager.deleteRestaurant(restaurants);
                     break;
                 case 4:
                     System.out.println("Au revoir !");
@@ -54,43 +49,12 @@ public class Main {
         }
     }
 
-    private static void loadExistingRestaurants() {
-        restaurants.clear();
-        File dataDir = new File(DATA_DIR);
-        if (!dataDir.exists()) {
-            dataDir.mkdirs();
-            return;
-        }
-
-        File[] files = dataDir.listFiles((dir, name) -> name.startsWith("restaurant_") && name.endsWith(".txt"));
-        if (files != null) {
-            for (File file : files) {
-                try {
-                    int id = Integer.parseInt(file.getName().replace("restaurant_", "").replace(".txt", ""));
-                    Restaurant restaurant = RestaurantFileHandler.loadRestaurant(id);
-                    if (restaurant != null) {
-                        restaurants.add(restaurant);
-                        System.out.println("Restaurant chargé : " + restaurant.getName());
-                    }
-                } catch (Exception e) {
-                    System.err.println("Erreur lors du chargement du restaurant : " + e.getMessage());
-                }
-            }
-        }
-
-        if (restaurants.isEmpty()) {
-            System.err.println("Attention : Aucun restaurant n'a pu être chargé !");
-        } else {
-            System.out.println("Nombre de restaurants chargés : " + restaurants.size());
-        }
-    }
-
     private static void showMainMenu() {
         System.out.println("\n=== Gestion des Restaurants ===");
         System.out.println("1. Sélectionner un restaurant existant");
         System.out.println("2. Créer un nouveau restaurant");
-        System.out.println("3. Supprimer un restaurant"); // Nouvelle option
-        System.out.println("4. Quitter"); // Décalé à 4
+        System.out.println("3. Supprimer un restaurant");
+        System.out.println("4. Quitter");
         System.out.print("Votre choix : ");
     }
 
@@ -120,86 +84,9 @@ public class Main {
         manageRestaurant(restaurants.get(index));
     }
 
-    private static void createNewRestaurant() {
-        System.out.print("Nom du restaurant : ");
-        String name = scanner.nextLine();
-        System.out.print("Adresse : ");
-        String address = scanner.nextLine();
-        
-        String postalCode = "";
-        boolean validPostalCode = false;
-        while (!validPostalCode) {
-            System.out.print("Code postal : ");
-            postalCode = scanner.nextLine();
-            if (postalCode.matches("\\d{5}")) {  // Vérifie que c'est un nombre à 5 chiffres
-                validPostalCode = true;
-            } else {
-                System.out.println("Veuillez entrer un code postal valide (5 chiffres)");
-            }
-        }
-        
-        System.out.print("Ville : ");
-        String city = scanner.nextLine();
-        
-        Restaurant newRestaurant = new Restaurant(restaurants.size() + 1, name, address, postalCode, city);
-        restaurants.add(newRestaurant);
-        RestaurantFileHandler.saveRestaurant(newRestaurant);
-        System.out.println("Restaurant ajouté et sauvegardé !");
-    }
-
-    private static void deleteRestaurant() {
-        if (restaurants.isEmpty()) {
-            System.out.println("Aucun restaurant à supprimer !");
-            return;
-        }
-
-        System.out.println("\n=== Restaurants disponibles ===");
-        for (int i = 0; i < restaurants.size(); i++) {
-            System.out.println((i + 1) + ". " + restaurants.get(i).toString());
-        }
-
-        System.out.print("Sélectionnez le numéro du restaurant à supprimer (0 pour annuler) : ");
-        try {
-            int choice = Integer.parseInt(scanner.nextLine());
-            
-            if (choice == 0) {
-                System.out.println("Suppression annulée.");
-                return;
-            }
-            
-            if (choice > 0 && choice <= restaurants.size()) {
-                Restaurant restaurantToDelete = restaurants.get(choice - 1);
-                
-                System.out.print("Êtes-vous sûr de vouloir supprimer " + 
-                               restaurantToDelete.getName() + " ? (oui/non) : ");
-                String confirm = scanner.nextLine();
-                
-                if (confirm.equalsIgnoreCase("oui")) {
-                    // Supprimer le fichier de données
-                    File fileToDelete = new File(DATA_DIR + "restaurant_" + 
-                                               restaurantToDelete.getId() + ".txt");
-                    if (fileToDelete.delete()) {
-                        restaurants.remove(choice - 1);
-                        System.out.println("Restaurant supprimé avec succès !");
-                    } else {
-                        System.out.println("Erreur lors de la suppression du fichier !");
-                    }
-                } else {
-                    System.out.println("Suppression annulée.");
-                }
-            } else {
-                System.out.println("Numéro de restaurant invalide !");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Veuillez entrer un numéro valide.");
-        }
-    }
-
     private static void manageRestaurant(Restaurant restaurant) {
-        // Recharger le restaurant avant de le gérer
-        Restaurant updatedRestaurant = RestaurantFileHandler.loadRestaurant(restaurant.getId());  // Modifié ici
+        Restaurant updatedRestaurant = RestaurantFileHandler.loadRestaurant(restaurant.getId());
         if (updatedRestaurant != null) {
-            // Mettre à jour la référence dans la liste des restaurants
             int index = restaurants.indexOf(restaurant);
             if (index != -1) {
                 restaurants.set(index, updatedRestaurant);
@@ -207,490 +94,79 @@ public class Main {
             restaurant = updatedRestaurant;
         }
 
-        boolean running = true;
+        running = true; // Initialize the running variable
         while (running) {
-            System.out.println("\n=== Menu principal ===");
-            System.out.println("1. Afficher les détails du restaurant"); // Nouvelle option
-            System.out.println("2. Ajouter un plat au menu");
-            System.out.println("3. Supprimer un plat du menu");
-            System.out.println("4. Afficher le menu");
-            System.out.println("5. Rechercher un plat");
-            System.out.println("6. Ajouter un plat à la commande");
-            System.out.println("7. Afficher la commande");
-            System.out.println("8. Gérer les employés"); // Option modifiée
-            System.out.println("9. Finaliser la commande");
-            System.out.println("10. Historique des commandes");
-            System.out.println("11. Quitter");
-            System.out.println("12. Retour à la liste des restaurants");
-            System.out.print("Votre choix : ");
-
+            showRestaurantMenu();
             try {
                 int choice = Integer.parseInt(scanner.nextLine());
-                switch (choice) {
-                    case 1:
-                        displayRestaurantDetails(restaurant);
-                        break;
-                    case 2:
-                        addDishToMenu(restaurant);
-                        break;
-                    case 3:
-                        removeDishFromMenu(restaurant);
-                        break;
-                    case 4:
-                        displayMenu(restaurant);
-                        break;
-                    case 5:
-                        searchDish(restaurant);
-                        break;
-                    case 6:
-                        addDishToOrder(restaurant);
-                        break;
-                    case 7:
-                        displayOrder(restaurant);
-                        break;
-                    case 8:
-                        manageEmployees(restaurant);
-                        RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
-                        break;
-                    case 9:
-                        finalizeOrder(restaurant);
-                        break;
-                    case 10:
-                        displayOrderHistory(restaurant);
-                        break;
-                    case 11:
-                        System.out.println("Au revoir !");
-                        System.exit(0);
-                        break;
-                    case 12:
-                        running = false;
-                        break;
-                    default:
-                        System.out.println("Option invalide !");
+                handleRestaurantChoice(choice, restaurant);
+                if (choice != 12) { // Si ce n'est pas "Retour"
+                    RestaurantFileHandler.saveRestaurant(restaurant);
                 }
-                // Sauvegarder après chaque action
-                RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
             } catch (NumberFormatException e) {
                 System.out.println("Veuillez entrer un numéro valide");
             }
         }
     }
 
-    private static void displayRestaurantDetails(Restaurant restaurant) {
-        if (restaurant != null) {
-            System.out.println(restaurant.toString());
-        } else {
-            System.out.println("Erreur : Restaurant non trouvé");
-        }
-    }
-
-    private static void addDishToMenu(Restaurant restaurant) {
-        try {
-            System.out.print("Nom du plat : ");
-            String name = scanner.nextLine();
-            
-            System.out.print("Description : ");
-            String description = scanner.nextLine();
-            
-            System.out.print("Prix : ");
-            double price = Double.parseDouble(scanner.nextLine());
-            
-            System.out.print("Calories : ");
-            int calories = Integer.parseInt(scanner.nextLine());
-            
-            System.out.print("Catégorie (Entrée/Plat/Dessert) : ");
-            String category = scanner.nextLine();
-            
-            System.out.print("Taille portion (Petite/Normale/Grande) : ");
-            String portionSize = scanner.nextLine();
-            
-            System.out.print("Disponible (true/false) : ");
-            boolean available = Boolean.parseBoolean(scanner.nextLine());
-            
-            List<String> ingredients = new ArrayList<>();
-            System.out.println("Entrez les ingrédients (ligne vide pour terminer) :");
-            while (true) {
-                String ingredient = scanner.nextLine();
-                if (ingredient.isEmpty()) break;
-                ingredients.add(ingredient);
-            }
-            
-            System.out.print("Type de cuisine : ");
-            String cuisineType = scanner.nextLine();
-            
-            System.out.print("Temps de préparation (minutes) : ");
-            int preparationTime = Integer.parseInt(scanner.nextLine());
-            
-            System.out.print("Prix spécial (0 si aucun) : ");
-            double specialPrice = Double.parseDouble(scanner.nextLine());
-            
-            System.out.print("URL de l'image : ");
-            String imageURL = scanner.nextLine();
-
-            Dish newDish = new Dish(name, description, price, calories, 
-                                  category, portionSize, available, 
-                                  ingredients, cuisineType, preparationTime, 
-                                  specialPrice, imageURL);
-            
-            restaurant.getMenu().addDish(newDish);
-            System.out.println("Plat ajouté au menu avec succès !");
-            
-        } catch (NumberFormatException e) {
-            System.out.println("Erreur : Veuillez entrer un nombre valide.");
-        } catch (Exception e) {
-            System.out.println("Erreur lors de l'ajout du plat : " + e.getMessage());
-        }
-    }
-
-    private static void removeDishFromMenu(Restaurant restaurant) {
-        List<Dish> dishes = restaurant.getMenu().getDishes();
-        if (dishes.isEmpty()) {
-            System.out.println("Le menu est vide !");
-            return;
-        }
-
-        System.out.println("\n=== Plats disponibles ===");
-        for (int i = 0; i < dishes.size(); i++) {
-            System.out.println((i + 1) + ". " + dishes.get(i).toString());
-        }
-
-        try {
-            System.out.print("Sélectionnez le numéro du plat à supprimer (1-" + dishes.size() + ") : ");
-            int choice = Integer.parseInt(scanner.nextLine()) - 1;
-
-            if (choice >= 0 && choice < dishes.size()) {
-                Dish dishToRemove = dishes.get(choice);
-                restaurant.getMenu().removeDish(dishToRemove);
-                System.out.println("Plat supprimé avec succès !");
-            } else {
-                System.out.println("Numéro de plat invalide !");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Veuillez entrer un numéro valide.");
-        }
-    }
-
-    private static void displayMenu(Restaurant restaurant) {
-        System.out.println("\n=== Menu du restaurant ===");
-        System.out.println(restaurant.getMenu().toString());
-    }
-
-    private static void searchDish(Restaurant restaurant) {
-        if (restaurant.getMenu().getDishes().isEmpty()) {
-            System.out.println("Le menu est vide !");
-            return;
-        }
-
-        System.out.println("\n=== Recherche de plat ===");
-        System.out.println("1. Rechercher par nom");
-        System.out.println("2. Rechercher par catégorie");
-        System.out.println("3. Rechercher par prix maximum");
-        System.out.println("4. Rechercher par calories maximum");
+    private static void showRestaurantMenu() {
+        System.out.println("\n=== Menu principal ===");
+        System.out.println("1. Afficher les détails du restaurant");
+        System.out.println("2. Ajouter un plat au menu");
+        System.out.println("3. Supprimer un plat du menu");
+        System.out.println("4. Afficher le menu");
+        System.out.println("5. Rechercher un plat");
+        System.out.println("6. Ajouter un plat à la commande");
+        System.out.println("7. Afficher la commande");
+        System.out.println("8. Gérer les employés");
+        System.out.println("9. Finaliser la commande");
+        System.out.println("10. Historique des commandes");
+        System.out.println("11. Quitter");
+        System.out.println("12. Retour à la liste des restaurants");
         System.out.print("Votre choix : ");
-
-        try {
-            int choice = Integer.parseInt(scanner.nextLine());
-            List<Dish> results = new ArrayList<>();
-
-            switch (choice) {
-                case 1:
-                    System.out.print("Entrez le nom à rechercher : ");
-                    String searchName = scanner.nextLine().toLowerCase();
-                    results = restaurant.getMenu().getDishes().stream()
-                        .filter(dish -> dish.getName().toLowerCase().contains(searchName))
-                        .toList();
-                    break;
-
-                case 2:
-                    System.out.print("Entrez la catégorie (Entrée/Plat/Dessert) : ");
-                    String searchCategory = scanner.nextLine();
-                    results = restaurant.getMenu().getDishes().stream()
-                        .filter(dish -> dish.getCategory().equalsIgnoreCase(searchCategory))
-                        .toList();
-                    break;
-
-                case 3:
-                    System.out.print("Entrez le prix maximum : ");
-                    double maxPrice = Double.parseDouble(scanner.nextLine());
-                    results = restaurant.getMenu().getDishes().stream()
-                        .filter(dish -> dish.getCurrentPrice() <= maxPrice)
-                        .toList();
-                    break;
-
-                case 4:
-                    System.out.print("Entrez le nombre maximum de calories : ");
-                    int maxCalories = Integer.parseInt(scanner.nextLine());
-                    results = restaurant.getMenu().getDishes().stream()
-                        .filter(dish -> dish.getCalories() <= maxCalories)
-                        .toList();
-                    break;
-
-                default:
-                    System.out.println("Option invalide !");
-                    return;
-            }
-
-            // Afficher les résultats
-            if (results.isEmpty()) {
-                System.out.println("Aucun plat trouvé !");
-            } else {
-                System.out.println("\nPlats trouvés :");
-                for (int i = 0; i < results.size(); i++) {
-                    System.out.println((i + 1) + ". " + results.get(i));
-                }
-            }
-
-        } catch (NumberFormatException e) {
-            System.out.println("Erreur : Veuillez entrer un nombre valide.");
-        } catch (Exception e) {
-            System.out.println("Erreur lors de la recherche : " + e.getMessage());
-        }
     }
 
-    private static void addDishToOrder(Restaurant restaurant) {
-        List<Dish> menuDishes = restaurant.getMenu().getDishes();
-        if (menuDishes.isEmpty()) {
-            System.out.println("Le menu est vide ! Impossible de créer une commande.");
-            return;
+    private static void handleRestaurantChoice(int choice, Restaurant restaurant) {
+        switch (choice) {
+            case 1:
+                RestaurantManager.displayRestaurantDetails(restaurant);
+                break;
+            case 2:
+                MenuManager.addDishToMenu(restaurant);
+                break;
+            case 3:
+                MenuManager.removeDishFromMenu(restaurant);
+                break;
+            case 4:
+                MenuManager.displayMenu(restaurant);
+                break;
+            case 5:
+                MenuManager.searchDish(restaurant);
+                break;
+            case 6:
+                OrderManager.addDishToOrder(restaurant);
+                break;
+            case 7:
+                OrderManager.displayOrder(restaurant);
+                break;
+            case 8:
+                EmployeeManager.manageEmployees(restaurant);
+                break;
+            case 9:
+                OrderManager.finalizeOrder(restaurant);
+                break;
+            case 10:
+                OrderManager.displayOrderHistory(restaurant);
+                break;
+            case 11:
+                System.exit(0);
+                break;
+            case 12:
+                running = false;
+                break;
+            default:
+                System.out.println("Option invalide !");
+                break;
         }
-
-        // Afficher ou créer une commande
-        List<Order> activeOrders = restaurant.getOrders().stream()
-            .filter(o -> "En cours".equals(o.getStatus()))
-            .toList();
-
-        Order currentOrder;
-        if (!activeOrders.isEmpty()) {
-            System.out.println("\nCommandes en cours :");
-            for (int i = 0; i < activeOrders.size(); i++) {
-                System.out.println((i + 1) + ". " + activeOrders.get(i));
-            }
-            System.out.println((activeOrders.size() + 1) + ". Créer une nouvelle commande");
-            
-            System.out.print("Choisissez une commande : ");
-            int orderChoice = Integer.parseInt(scanner.nextLine()) - 1;
-            
-            if (orderChoice == activeOrders.size()) {
-                currentOrder = restaurant.createNewOrder();
-                System.out.println("Nouvelle commande créée.");
-            } else if (orderChoice >= 0 && orderChoice < activeOrders.size()) {
-                currentOrder = activeOrders.get(orderChoice);
-            } else {
-                System.out.println("Choix invalide !");
-                return;
-            }
-        } else {
-            currentOrder = restaurant.createNewOrder();
-            System.out.println("Nouvelle commande créée.");
-        }
-
-        // Afficher le menu et sélectionner un plat
-        System.out.println("\n=== Menu disponible ===");
-        for (int i = 0; i < menuDishes.size(); i++) {
-            System.out.println((i + 1) + ". " + menuDishes.get(i));
-        }
-
-        try {
-            System.out.print("Sélectionnez un plat (1-" + menuDishes.size() + ") : ");
-            int dishChoice = Integer.parseInt(scanner.nextLine()) - 1;
-
-            if (dishChoice >= 0 && dishChoice < menuDishes.size()) {
-                Dish selectedDish = menuDishes.get(dishChoice);
-                currentOrder.addDish(selectedDish);
-                System.out.println("Plat ajouté à la commande !");
-                System.out.println("\nCommande actuelle :");
-                System.out.println(currentOrder);
-            } else {
-                System.out.println("Numéro de plat invalide !");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Veuillez entrer un numéro valide.");
-        }
-    }
-
-    private static void displayOrder(Restaurant restaurant) {
-        System.out.println("\n=== Commandes en cours ===");
-        for (Order order : restaurant.getOrders()) {
-            System.out.println(order.toString());
-        }
-    }
-
-    private static void addEmployee(Restaurant restaurant) {
-        System.out.print("Prénom : ");
-        String firstName = scanner.nextLine();
-        System.out.print("Nom : ");
-        String lastName = scanner.nextLine();
-        System.out.print("Rôle : ");
-        String role = scanner.nextLine();
-        System.out.print("Salaire : ");
-        double salary = Double.parseDouble(scanner.nextLine());
-        System.out.print("Date d'embauche (YYYY-MM-DD) : ");
-        String hireDate = scanner.nextLine();
-
-        Employee newEmployee = new Employee(
-            restaurant.getEmployees().size() + 1,
-            firstName,
-            lastName,
-            role,
-            hireDate,
-            salary
-        );
-        restaurant.addEmployee(newEmployee);
-        RestaurantFileHandler.saveRestaurant(restaurant);  // Modifié ici
-        System.out.println("Employé ajouté et sauvegardé !");
-    }
-
-    private static void manageMenu(Restaurant restaurant) {
-        System.out.println("\n=== Gestion du menu ===");
-        // TODO: Implémenter la gestion du menu
-        System.out.println("Fonctionnalité à venir...");
-    }
-
-    private static void manageEmployees(Restaurant restaurant) {
-        boolean managing = true;
-        while (managing) {
-            System.out.println("\n=== Gestion des employés ===");
-            System.out.println("1. Afficher la liste des employés");
-            System.out.println("2. Ajouter un employé");
-            System.out.println("3. Retour au menu principal");
-            System.out.print("Votre choix : ");
-
-            try {
-                int choice = Integer.parseInt(scanner.nextLine());
-                switch (choice) {
-                    case 1:
-                        displayEmployees(restaurant);
-                        break;
-                    case 2:
-                        addEmployee(restaurant);
-                        break;
-                    case 3:
-                        managing = false;
-                        break;
-                    default:
-                        System.out.println("Option invalide !");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Veuillez entrer un numéro valide");
-            }
-        }
-    }
-
-    private static void displayEmployees(Restaurant restaurant) {
-        if (restaurant.getEmployees().isEmpty()) {
-            System.out.println("Aucun employé dans ce restaurant !");
-            return;
-        }
-
-        System.out.println("\n=== Liste des employés ===");
-        Map<String, List<Employee>> employeesByRole = restaurant.getEmployees().stream()
-            .collect(Collectors.groupingBy(Employee::getRole));
-
-        employeesByRole.forEach((role, employees) -> {
-            System.out.println("\n" + role + " :");
-            employees.forEach(emp -> 
-                System.out.printf("- %s %s (Depuis le %s, Salaire: %.2f euros)%n",
-                    emp.getFirstName(),
-                    emp.getLastName(),
-                    emp.getHireDate(),
-                    emp.getSalary())
-            );
-        });
-
-        double totalMonthly = restaurant.totalSalaireEmployes();
-        System.out.printf("%nTotal des dépenses en salaires : %.2f euros/mois%n", totalMonthly);
-        System.out.printf("Total des dépenses en salaires : %.2f euros/an%n", totalMonthly * 12);
-    }
-
-    private static void manageOrders(Restaurant restaurant) {
-        System.out.println("\n=== Gestion des commandes ===");
-        // TODO: Implémenter la gestion des commandes
-        System.out.println("Fonctionnalité à venir...");
-    }
-
-    private static void finalizeOrder(Restaurant restaurant) {
-        List<Order> activeOrders = restaurant.getOrders().stream()
-            .filter(o -> "En cours".equals(o.getStatus()))
-            .toList();
-
-        if (activeOrders.isEmpty()) {
-            System.out.println("Aucune commande en cours !");
-            return;
-        }
-
-        System.out.println("\n=== Commandes en cours ===");
-        for (int i = 0; i < activeOrders.size(); i++) {
-            System.out.println((i + 1) + ". " + activeOrders.get(i));
-        }
-
-        try {
-            System.out.print("Sélectionnez la commande à finaliser (1-" + activeOrders.size() + ") : ");
-            int choice = Integer.parseInt(scanner.nextLine()) - 1;
-
-            if (choice >= 0 && choice < activeOrders.size()) {
-                Order orderToFinalize = activeOrders.get(choice);
-                System.out.println("\nRécapitulatif de la commande :");
-                System.out.println(orderToFinalize);
-                
-                System.out.print("\nMode de paiement (CB/Espèces/Chèque) : ");
-                String paymentMethod = scanner.nextLine();
-                
-                System.out.print("Confirmer le paiement de " + 
-                    String.format("%.2f", orderToFinalize.getTotal()) + 
-                    " euros par " + paymentMethod + " ? (oui/non) : ");
-                
-                String confirm = scanner.nextLine();
-                if (confirm.equalsIgnoreCase("oui")) {
-                    orderToFinalize.setStatus("Terminée");
-                    System.out.println("Commande finalisée avec succès !");
-                    System.out.println("Bon appétit !");
-                } else {
-                    System.out.println("Paiement annulé.");
-                }
-            } else {
-                System.out.println("Numéro de commande invalide !");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Veuillez entrer un numéro valide.");
-        }
-    }
-
-    private static void displayOrderHistory(Restaurant restaurant) {
-        List<Order> completedOrders = restaurant.getOrders().stream()
-            .filter(o -> "Terminée".equals(o.getStatus()))
-            .toList();
-
-        if (completedOrders.isEmpty()) {
-            System.out.println("Aucune commande finalisée !");
-            return;
-        }
-
-        double totalRevenue = 0;
-        System.out.println("\n=== Historique des commandes ===");
-        
-        // Utilisation de la bonne locale pour l'affichage des montants
-        Locale.setDefault(Locale.FRANCE);
-        
-        for (Order order : completedOrders) {
-            // Utilisation de String.format avec la locale française
-            System.out.printf("\nOrder #%d (%s) - Total: %.2f euros - Status: %s\n",
-                order.getOrderNumber(),
-                order.getOrderTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
-                order.getTotal(),
-                order.getStatus());
-                
-            for (Dish dish : order.getDishes()) {
-                System.out.printf("  - %s - %s : %.2f euros\n", 
-                    dish.getName(),
-                    dish.getDescription(),
-                    dish.getCurrentPrice());
-            }
-            totalRevenue += order.getTotal();
-        }
-        
-        System.out.println("\nRécapitulatif :");
-        System.out.println("Nombre de commandes finalisées : " + completedOrders.size());
-        System.out.printf("Chiffre d'affaires total : %.2f euros\n", totalRevenue);
-        System.out.printf("Moyenne par commande : %.2f euros\n", totalRevenue / completedOrders.size());
     }
 }
