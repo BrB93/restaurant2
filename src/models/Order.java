@@ -53,12 +53,7 @@ public class Order {
     @Override
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Order #%d (%s) - Total: %.2f€ - Status: %s", 
-                  orderNumber, orderTime.format(formatter), total, status));
-        for (Dish dish : dishes) {
-            sb.append("\n  - ").append(dish.toString());
-        }
-        return sb.toString();
+        return String.format("Order #%d (%s) - Total: %.2f euros - Status: %s", 
+            orderNumber, orderTime.format(formatter), total, status);
     }
 }

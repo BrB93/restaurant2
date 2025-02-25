@@ -100,7 +100,7 @@ public class Dish {
 
     @Override
     public String toString() {
-        return String.format("%s - %s : %.2f€ (%s, %d kcal, %d min)", 
+        return String.format("%s - %s : %.2f euros (%s, %d kcal, %d min)", 
             name, description, getCurrentPrice(), category, calories, preparationTime);
     }
 }

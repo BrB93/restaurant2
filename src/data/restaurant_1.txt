@@ -7,10 +7,13 @@ City: Paris
 
 === MENU ===
 Carbo - pate sauce creme : 17,00€ (Plat, 458 kcal, 15 min)
+Tarte aux fraises - Tartes aux fraises : 8,00€ (Dessert, 164 kcal, 40 min)
+Soupe aux choux - Soupe aux choux : 7,50€ (Entr�e, 80 kcal, 8 min)
 
 === EMPLOYEES ===
 Employee #1: Fernand Ferreir, Role: Manager, Salary: 1950,00, Hire Date: 2025-01-04
 Employee #2: David Gregov, Role: Commis, Salary: 400,00, Hire Date: 2024-12-01
+Employee #3: Julien Groult, Role: Chef, Salary: 2400,00, Hire Date: 2024-05-04
 
 === ORDERS ===
 Order #1 (24/02/2025 11:19) - Status: Terminée
@@ -24,4 +27,13 @@ Total: 32,00€
 
 Order #2 (24/02/2025 12:14) - Status: Terminée
 Total: 33,00€
+
+Order #2 (25/02/2025 08:45) - Status: Terminée
+Total: 24,50€
+
+Order #3 (25/02/2025 08:48) - Status: Terminée
+Total: 33,00€
+
+Order #4 (25/02/2025 08:50) - Status: Terminée
+Total: 7,50€
 

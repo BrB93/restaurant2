@@ -3,7 +3,7 @@ package utils;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.time.LocalDateTime;
+import java.time.LocalDateTime;  // Ajout de l'import manquant
 import java.time.format.DateTimeFormatter; // Ajout de l'import manquant
 import java.util.*;
 import models.*;
@@ -35,7 +35,8 @@ public class FileHandler {
             // Section Menu - Correction du format de sauvegarde
             writer.println("=== MENU ===");
             for (Dish dish : restaurant.getMenu().getDishes()) {
-                writer.printf("%s - %s : %.2f€ (%s, %d kcal, %d min)%n",
+                writer.printf(Locale.FRANCE,
+                    "%s - %s : %.2f€ (%s, %d kcal, %d min)%n",
                     dish.getName(),
                     dish.getDescription(),
                     dish.getCurrentPrice(),
@@ -61,23 +62,31 @@ public class FileHandler {
             // Section Orders - Format modifié
             writer.println("=== ORDERS ===");
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            for (Order order : restaurant.getOrders()) {
-                writer.println("Order #" + order.getOrderNumber() + " (" + 
-                             order.getOrderTime().format(formatter) + ") - " +
-                             "Status: " + order.getStatus());
-                             
-                // Ajout des plats de la commande
-                for (Dish dish : order.getDishes()) {
-                    writer.println("  - " + dish.getName() + " - " + dish.getDescription() + 
-                                 " : " + String.format("%.2f", dish.getCurrentPrice()) + "€");
-                }
-                writer.printf("Total: %.2f€%n", order.getTotal());
-                writer.println();
-            }
+            saveRestaurantInfo(writer, restaurant);
 
             writer.close();
         } catch (IOException e) {
             System.err.println("Erreur lors de la sauvegarde du restaurant: " + e.getMessage());
+        }
+    }
+
+    private static void saveRestaurantInfo(PrintWriter writer, Restaurant restaurant) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        for (Order order : restaurant.getOrders()) {
+            writer.println("Order #" + order.getOrderNumber() + " (" + 
+                         order.getOrderTime().format(formatter) + ") - " +
+                         "Status: " + order.getStatus());
+                         
+            for (Dish dish : order.getDishes()) {
+                writer.printf(Locale.FRANCE,
+                    "  - %s - %s : %.2f€\n", 
+                    dish.getName(),
+                    dish.getDescription(),
+                    dish.getCurrentPrice());
+            }
+            writer.printf(Locale.FRANCE,
+                "Total: %.2f€%n", order.getTotal());
+            writer.println();
         }
     }
 
@@ -201,8 +210,10 @@ public class FileHandler {
                         order.addDish(dish);
                     }
                 } else if (line.startsWith("Total: ")) {
-                    total = Double.parseDouble(line.substring(7, line.indexOf("€")).replace(",", "."));
-                    // Utiliser la réflexion pour mettre à jour le total si nécessaire
+                    String totalStr = line.substring(7).trim();
+                    // Extraire le prix avant le mot "euros"
+                    totalStr = totalStr.substring(0, totalStr.indexOf(" euros")).trim();
+                    total = Double.parseDouble(totalStr.replace(",", "."));
                     try {
                         java.lang.reflect.Field totalField = Order.class.getDeclaredField("total");
                         totalField.setAccessible(true);
@@ -536,7 +547,6 @@ public class FileHandler {
 
     private static void parseDishForMenu(Restaurant restaurant, String line) {
         try {
-            // Format: "NomPlat - Description : Prix€ (Catégorie, Calories kcal, Temps min)"
             String[] mainParts = line.split(" : ");
             String[] nameDesc = mainParts[0].split(" - ", 2);
             String name = nameDesc[0];
@@ -544,9 +554,11 @@ public class FileHandler {
 
             // Parser le prix et les détails
             String priceAndDetails = mainParts[1];
-            double price = Double.parseDouble(
-                priceAndDetails.substring(0, priceAndDetails.indexOf("€")).trim().replace(",", ".")
-            );
+            double price;
+
+            // Extraire le prix avant le mot "euros"
+            String priceStr = priceAndDetails.substring(0, priceAndDetails.indexOf(" euros")).trim();
+            price = Double.parseDouble(priceStr.replace(",", "."));
 
             // Créer le plat avec les informations de base
             Dish dish = new Dish(name, description, price);

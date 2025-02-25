@@ -1,7 +1,8 @@
 import java.io.File;
-import java.time.format.DateTimeFormatter;  // Ajout de l'import manquant
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;  // Ajout de l'import manquant
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -14,6 +15,8 @@ public class Main {
     private static final String DATA_DIR = "src/data/";
 
     public static void main(String[] args) {
+        System.setProperty("file.encoding", "UTF-8");
+        Locale.setDefault(Locale.FRANCE);
         loadExistingRestaurants();
         while (true) {
             showMainMenu();
@@ -572,20 +575,23 @@ public class Main {
         }
 
         System.out.println("\n=== Liste des employés ===");
-        // Utiliser le format groupé par rôle
         Map<String, List<Employee>> employeesByRole = restaurant.getEmployees().stream()
             .collect(Collectors.groupingBy(Employee::getRole));
 
         employeesByRole.forEach((role, employees) -> {
             System.out.println("\n" + role + " :");
             employees.forEach(emp -> 
-                System.out.printf("- %s %s (Depuis le %s, Salaire: %.2f€)\n",
+                System.out.printf("- %s %s (Depuis le %s, Salaire: %.2f euros)%n",
                     emp.getFirstName(),
                     emp.getLastName(),
                     emp.getHireDate(),
                     emp.getSalary())
             );
         });
+
+        double totalMonthly = restaurant.totalSalaireEmployes();
+        System.out.printf("%nTotal des dépenses en salaires : %.2f euros/mois%n", totalMonthly);
+        System.out.printf("Total des dépenses en salaires : %.2f euros/an%n", totalMonthly * 12);
     }
 
     private static void manageOrders(Restaurant restaurant) {
@@ -623,7 +629,7 @@ public class Main {
                 
                 System.out.print("Confirmer le paiement de " + 
                     String.format("%.2f", orderToFinalize.getTotal()) + 
-                    "€ par " + paymentMethod + " ? (oui/non) : ");
+                    " euros par " + paymentMethod + " ? (oui/non) : ");
                 
                 String confirm = scanner.nextLine();
                 if (confirm.equalsIgnoreCase("oui")) {
@@ -653,25 +659,30 @@ public class Main {
 
         double totalRevenue = 0;
         System.out.println("\n=== Historique des commandes ===");
+        
+        // Utilisation de la bonne locale pour l'affichage des montants
+        Locale.setDefault(Locale.FRANCE);
+        
         for (Order order : completedOrders) {
-            // Format modifié pour inclure les plats
-            System.out.printf("\nOrder #%d (%s) - Total: %.2f€ - Status: %s\n",
+            // Utilisation de String.format avec la locale française
+            System.out.printf("\nOrder #%d (%s) - Total: %.2f euros - Status: %s\n",
                 order.getOrderNumber(),
                 order.getOrderTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
                 order.getTotal(),
                 order.getStatus());
                 
-            // Afficher les plats de la commande
             for (Dish dish : order.getDishes()) {
-                System.out.println("  - " + dish.getName() + " - " + dish.getDescription() +
-                                 " : " + String.format("%.2f", dish.getCurrentPrice()) + "€");
+                System.out.printf("  - %s - %s : %.2f euros\n", 
+                    dish.getName(),
+                    dish.getDescription(),
+                    dish.getCurrentPrice());
             }
             totalRevenue += order.getTotal();
         }
         
         System.out.println("\nRécapitulatif :");
         System.out.println("Nombre de commandes finalisées : " + completedOrders.size());
-        System.out.printf("Chiffre d'affaires total : %.2f€\n", totalRevenue);
-        System.out.printf("Moyenne par commande : %.2f€\n", totalRevenue / completedOrders.size());
+        System.out.printf("Chiffre d'affaires total : %.2f euros\n", totalRevenue);
+        System.out.printf("Moyenne par commande : %.2f euros\n", totalRevenue / completedOrders.size());
     }
 }
